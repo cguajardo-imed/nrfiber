@@ -20,7 +20,10 @@ func (ce customErr) Error() string {
 
 func main() {
 	app := fiber.New()
-	nr, err := newrelic.NewApplication(newrelic.ConfigEnabled(true), newrelic.ConfigAppName("demo"), newrelic.ConfigLicense("license-key"))
+	nr, err := newrelic.NewApplication(
+		newrelic.ConfigEnabled(true),
+		newrelic.ConfigAppName("demo"),
+		newrelic.ConfigLicense("license-key"))
 	if err != nil {
 		log.Fatal(err)
 	}
