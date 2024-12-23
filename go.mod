@@ -1,4 +1,4 @@
-module github.com/erkanzileli/nrfiber
+module github.com/cguajardo-imed/nrfiber
 
 go 1.21
 
