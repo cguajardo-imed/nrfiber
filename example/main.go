@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/erkanzileli/nrfiber"
+	"github.com/cguajardo-imed/nrfiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"log"
