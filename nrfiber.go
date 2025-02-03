@@ -100,3 +100,9 @@ func createHttpRequest(c *fiber.Ctx) *http.Request {
 		Host:   reqHost,
 	}
 }
+
+func Send(c *fiber.Ctx, segmentName string) {
+	txn := FromContext(c)
+	segment := txn.StartSegment(segmentName)
+	defer segment.End()
+}

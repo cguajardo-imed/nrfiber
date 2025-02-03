@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/cguajardo-imed/nrfiber"
-	"github.com/gofiber/fiber/v2"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/cguajardo-imed/nrfiber"
+	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type customErr struct {
@@ -19,19 +22,24 @@ func (ce customErr) Error() string {
 }
 
 func main() {
+	godotenv.Load()
 	app := fiber.New()
 	nr, err := newrelic.NewApplication(
 		newrelic.ConfigEnabled(true),
 		newrelic.ConfigAppName("demo"),
-		newrelic.ConfigLicense("license-key"))
+		newrelic.ConfigLicense(os.Getenv("NEWRELIC_KEY")),
+		newrelic.ConfigDistributedTracerEnabled(true),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	app.Use(nrfiber.Middleware(nr, nrfiber.ConfigNoticeErrorEnabled(true)))
+
 	app.Get("/give-me-error", func(ctx *fiber.Ctx) error {
 		err := customErr{Message: "wrong request", Code: 4329}
 		ctx.Status(http.StatusBadRequest).JSON(err)
 		return err
 	})
-	app.Listen(":3000")
+	app.Listen(":8000")
 }
