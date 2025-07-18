@@ -1,9 +1,11 @@
+// Package nrfiber provides New Relic instrumentation for the Fiber web framework.
 package nrfiber
 
 import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -16,11 +18,11 @@ func FromContext(c *fiber.Ctx) *newrelic.Transaction {
 	return newrelic.FromContext(c.UserContext())
 }
 
-// Middleware creates Fiber middleware that instruments requests.
+// Middleware creates Fiber middleware that instrument's requests.
 //
-//	app := fiber.New()
-//	// Add the nrfiber middleware before other middlewares or routes:
-//	app.Use(nrfiber.Middleware(app))
+// app := fiber.New()
+// // Add the nrfiber middleware before other middlewares or routes:
+// app.Use(nrfiber.Middleware(app))
 func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
 	if nil == app {
 		return func(c *fiber.Ctx) error {
@@ -29,14 +31,13 @@ func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
 	}
 
 	configMap := createConfigMap(configs...)
-	noticeErrorEnabled := noticeErrorEnabled(configMap)
-	statusCodeIgnored := statusCodeIgnored(configMap)
+	createTransactionNameFunc := customTransactionNameFunc(configMap, defaultTransactionName)
 
 	return func(c *fiber.Ctx) error {
-		txn := app.StartTransaction(createTransactionName(c))
+		txn := app.StartTransaction(createTransactionNameFunc(c))
 		defer txn.End()
 
-		txn.SetWebRequestHTTP(createHttpRequest(c))
+		txn.SetWebRequestHTTP(createHTTPRequest(c))
 
 		c.SetUserContext(newrelic.NewContext(c.UserContext(), txn))
 
@@ -44,21 +45,7 @@ func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
 		statusCode := c.Context().Response.StatusCode()
 
 		if err != nil {
-			if fiberErr, ok := err.(*fiber.Error); ok {
-				statusCode = fiberErr.Code
-			}
-			if noticeErrorEnabled {
-				found := false
-				for _, v := range statusCodeIgnored {
-					if v == statusCode {
-						found = true
-						break
-					}
-				}
-				if !found {
-					txn.NoticeError(err)
-				}
-			}
+			statusCode = noticeError(txn, err, configMap)
 		}
 
 		txn.SetWebResponse(nil).WriteHeader(statusCode)
@@ -66,21 +53,44 @@ func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
 	}
 }
 
-func createTransactionName(c *fiber.Ctx) string {
+func noticeError(txn *newrelic.Transaction, err error, configMap map[string]any) int {
+	noticeErrorEnabled := noticeErrorEnabled(configMap)
+	statusCodeIgnored := statusCodeIgnored(configMap)
+	statusCode := http.StatusInternalServerError
+
+	if fiberErr, ok := err.(*fiber.Error); ok {
+		statusCode = fiberErr.Code
+	}
+	if noticeErrorEnabled {
+		found := false
+
+		if slices.Contains(statusCodeIgnored, statusCode) {
+			found = true
+		}
+
+		if !found {
+			txn.NoticeError(err)
+		}
+	}
+
+	return statusCode
+}
+
+func defaultTransactionName(c *fiber.Ctx) string {
 	return fmt.Sprintf("%s %s", c.Request().Header.Method(), c.Request().URI().Path())
 }
 
-func convertRequestHeaders(fastHttpHeaders *fasthttp.RequestHeader) http.Header {
+func convertRequestHeaders(fastHTTPHeaders *fasthttp.RequestHeader) http.Header {
 	headers := make(http.Header)
 
-	fastHttpHeaders.VisitAll(func(k, v []byte) {
+	fastHTTPHeaders.VisitAll(func(k, v []byte) {
 		headers.Set(string(k), string(v))
 	})
 
 	return headers
 }
 
-func createHttpRequest(c *fiber.Ctx) *http.Request {
+func createHTTPRequest(c *fiber.Ctx) *http.Request {
 	reqHeaders := convertRequestHeaders(&c.Request().Header)
 
 	reqHost := reqHeaders.Get("Host")
