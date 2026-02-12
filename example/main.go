@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cguajardo-imed/nrfiber"
+	"github.com/cguajardo-imed/nrfiber/v3"
 	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
 	"github.com/newrelic/go-agent/v3/newrelic"

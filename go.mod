@@ -1,4 +1,4 @@
-module github.com/cguajardo-imed/nrfiber
+module github.com/cguajardo-imed/nrfiber/v3
 
 go 1.25.0
 
