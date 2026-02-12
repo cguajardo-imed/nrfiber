@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/cguajardo-imed/nrfiber"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
@@ -39,7 +39,7 @@ func main() {
 		nrfiber.ConfigNoticeErrorEnabled(true),
 	))
 
-	app.Get("/give-me-error", func(ctx *fiber.Ctx) error {
+	app.Get("/give-me-error", func(ctx fiber.Ctx) error {
 		err := customErr{Message: "wrong request", Code: 4329}
 		ctx.Status(http.StatusBadRequest).JSON(err)
 		return err

@@ -1,6 +1,6 @@
 package nrfiber
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/gofiber/fiber/v3"
 
 const (
 	configKeyNoticeErrorEnabled     = "NoticeErrorEnabled"
@@ -27,7 +27,7 @@ func ConfigStatusCodeIgnored(statusCode []int) *config {
 	}
 }
 
-func ConfigCustomTransactionNameFunc(customTransactionNameFunc func(c *fiber.Ctx) string) *config {
+func ConfigCustomTransactionNameFunc(customTransactionNameFunc func(c fiber.Ctx) string) *config {
 	return &config{
 		key:   configCustomTransactionNameFunc,
 		value: customTransactionNameFunc,
@@ -60,9 +60,9 @@ func statusCodeIgnored(configMap map[string]any) []int {
 	return []int{}
 }
 
-func customTransactionNameFunc(configMap map[string]any, defaultFunc func(c *fiber.Ctx) string) func(c *fiber.Ctx) string {
+func customTransactionNameFunc(configMap map[string]any, defaultFunc func(c fiber.Ctx) string) func(c fiber.Ctx) string {
 	if val, ok := configMap[configCustomTransactionNameFunc]; ok {
-		if v, ok := val.(func(c *fiber.Ctx) string); ok {
+		if v, ok := val.(func(c fiber.Ctx) string); ok {
 			return v
 		}
 	}
