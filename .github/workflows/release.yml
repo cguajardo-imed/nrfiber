@@ -136,21 +136,3 @@ jobs:
         if: steps.check_tag.outputs.tag_exists == 'true'
         run: |
           echo "Skipping release creation - tag already exists"
-
-      - name: Wait for tag propagation
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        run: |
-          echo "Waiting for GitHub to propagate the tag..."
-          sleep 10
-
-      - name: Publish to Go proxy
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        run: |
-          NEW_VERSION="${{ steps.determine_version.outputs.new_version }}"
-          echo "Notifying Go proxy about version $NEW_VERSION"
-
-          # Trigger Go proxy to fetch and cache the new version
-          GOPROXY=proxy.golang.org go list -m github.com/cguajardo-imed/nrfiber@${NEW_VERSION}
-
-          echo "✅ Successfully published to Go proxy"
-          echo "Package is now available via: go get github.com/cguajardo-imed/nrfiber@${NEW_VERSION}"
