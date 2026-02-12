@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., v3.0.0)'
+        description: "Version to publish (e.g., v3.0.0)"
         required: true
         type: string
 
@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.25"
 
       - name: Determine version
         id: get_version
