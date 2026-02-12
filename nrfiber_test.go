@@ -33,10 +33,10 @@ func TestDefaultTransactionName(t *testing.T) {
 	defer app.ReleaseCtx(c)
 
 	c.Request().Header.SetMethod("GET")
-	c.Request().SetRequestURI("/test")
+	c.Request().SetRequestURI("/")
 
 	name := defaultTransactionName(c)
-	assert.Equal(t, "GET /test", name)
+	assert.Equal(t, "GET /", name)
 }
 
 func TestCustomTransanctionName(t *testing.T) {
@@ -46,10 +46,10 @@ func TestCustomTransanctionName(t *testing.T) {
 	defer app.ReleaseCtx(c)
 
 	c.Request().Header.SetMethod("GET")
-	c.Request().SetRequestURI("/test")
+	c.Request().SetRequestURI("/")
 
 	name := defaultTransactionName(c)
-	assert.Equal(t, "GET /test", name)
+	assert.Equal(t, "GET /", name)
 }
 
 func TestCreateHttpRequest(t *testing.T) {
@@ -58,7 +58,7 @@ func TestCreateHttpRequest(t *testing.T) {
 	defer app.ReleaseCtx(c)
 
 	c.Request().Header.SetMethod("GET")
-	c.Request().SetRequestURI("http://example.com/test?foo=bar")
+	c.Request().SetRequestURI("http://example.com/?foo=bar")
 	c.Request().Header.Set("Host", "example.com")
 	c.Request().Header.Set("User-Agent", "test-agent")
 
@@ -67,7 +67,7 @@ func TestCreateHttpRequest(t *testing.T) {
 	assert.Equal(t, "GET", req.Method)
 	assert.Equal(t, "http", req.URL.Scheme)
 	assert.Equal(t, "example.com", req.URL.Host)
-	assert.Equal(t, "/test", req.URL.Path)
+	assert.Equal(t, "/", req.URL.Path)
 	assert.Equal(t, "foo=bar", req.URL.RawQuery)
 	assert.Equal(t, "test-agent", req.Header.Get("User-Agent"))
 }
