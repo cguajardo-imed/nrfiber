@@ -9,7 +9,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/newrelic/go-agent/v3/newrelic"
-	"github.com/valyala/fasthttp"
 )
 
 // FromContext returns the Transaction from the context if present, and nil
@@ -42,7 +41,7 @@ func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
 		c.SetContext(newrelic.NewContext(c.Context(), txn))
 
 		err := c.Next()
-		statusCode := c.RequestCtx().Response.StatusCode()
+		statusCode := c.Response().StatusCode()
 
 		if err != nil {
 			statusCode = noticeError(txn, err, configMap)
@@ -77,13 +76,13 @@ func noticeError(txn *newrelic.Transaction, err error, configMap map[string]any)
 }
 
 func defaultTransactionName(c fiber.Ctx) string {
-	return fmt.Sprintf("%s %s", c.Request().Header.Method(), c.Request().URI().Path())
+	return fmt.Sprintf("%s %s", c.Method(), c.Path())
 }
 
-func convertRequestHeaders(fastHTTPHeaders *fasthttp.RequestHeader) http.Header {
+func convertRequestHeaders(c fiber.Ctx) http.Header {
 	headers := make(http.Header)
 
-	fastHTTPHeaders.VisitAll(func(k, v []byte) {
+	c.Request().Header.VisitAll(func(k, v []byte) {
 		headers.Set(string(k), string(v))
 	})
 
@@ -91,19 +90,24 @@ func convertRequestHeaders(fastHTTPHeaders *fasthttp.RequestHeader) http.Header 
 }
 
 func createHTTPRequest(c fiber.Ctx) *http.Request {
-	reqHeaders := convertRequestHeaders(&c.Request().Header)
+	reqHeaders := convertRequestHeaders(c)
 
-	reqHost := reqHeaders.Get("Host")
+	reqHost := c.Hostname()
 	if reqHost == "" {
-		reqHost = string(c.Request().URI().Host())
+		reqHost = reqHeaders.Get("Host")
+	}
+
+	scheme := "http"
+	if c.Protocol() == "https" {
+		scheme = "https"
 	}
 
 	return &http.Request{
 		Method: c.Method(),
 		URL: &url.URL{
-			Scheme:   string(c.Request().URI().Scheme()),
+			Scheme:   scheme,
 			Host:     reqHost,
-			Path:     string(c.Request().URI().Path()),
+			Path:     c.Path(),
 			RawQuery: string(c.Request().URI().QueryString()),
 		},
 		Header: reqHeaders,
@@ -116,5 +120,3 @@ func Send(c fiber.Ctx, segmentName string) {
 	segment := txn.StartSegment(segmentName)
 	defer segment.End()
 }
-
-// fiber:context-methods migrated

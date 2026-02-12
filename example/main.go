@@ -34,15 +34,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app.Use(nrfiber.Middleware(
-		nr,
-		nrfiber.ConfigNoticeErrorEnabled(true),
-	))
+	app.Use(nrfiber.Middleware(nr, nrfiber.ConfigNoticeErrorEnabled(true)))
 
 	app.Get("/give-me-error", func(ctx fiber.Ctx) error {
 		err := customErr{Message: "wrong request", Code: 4329}
 		ctx.Status(http.StatusBadRequest).JSON(err)
 		return err
+	})
+	app.Get("/", func(ctx fiber.Ctx) error {
+		return ctx.Status(http.StatusOK).SendString("Hello, World!")
 	})
 	app.Listen(":8000")
 }
