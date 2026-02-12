@@ -1,0 +1,122 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from file
+        id: read_version
+        run: |
+          VERSION=$(cat version | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version from file: $VERSION"
+
+      - name: Get latest release
+        id: get_latest_release
+        run: |
+          LATEST_RELEASE=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "No previous releases found"
+            echo "latest_release=" >> $GITHUB_OUTPUT
+            echo "latest_version=" >> $GITHUB_OUTPUT
+          else
+            echo "latest_release=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+            # Extract base version (remove 'v' prefix and any letter suffix)
+            LATEST_VERSION=$(echo "$LATEST_RELEASE" | sed 's/^v//' | sed 's/[a-z]$//')
+            echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+            echo "Latest release: $LATEST_RELEASE (base version: $LATEST_VERSION)"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Determine release version
+        id: determine_version
+        run: |
+          FILE_VERSION="${{ steps.read_version.outputs.version }}"
+          LATEST_VERSION="${{ steps.get_latest_release.outputs.latest_version }}"
+          LATEST_RELEASE="${{ steps.get_latest_release.outputs.latest_release }}"
+
+          if [ -z "$LATEST_VERSION" ]; then
+            # No previous release, use version from file
+            NEW_VERSION="v${FILE_VERSION}"
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "Creating first release: $NEW_VERSION"
+          elif [ "$FILE_VERSION" = "$LATEST_VERSION" ]; then
+            # Versions match, need to add/increment letter suffix
+            echo "Versions match ($FILE_VERSION), adding letter suffix"
+
+            # Extract current letter suffix if exists
+            CURRENT_SUFFIX=$(echo "$LATEST_RELEASE" | grep -o '[a-z]$' || echo "")
+
+            if [ -z "$CURRENT_SUFFIX" ]; then
+              # No suffix yet, start with 'a'
+              NEW_VERSION="v${FILE_VERSION}a"
+            else
+              # Increment the letter
+              NEXT_LETTER=$(echo "$CURRENT_SUFFIX" | tr 'a-y' 'b-z')
+              if [ "$CURRENT_SUFFIX" = "z" ]; then
+                echo "ERROR: Reached maximum letter suffix (z). Please update the version in the version file."
+                exit 1
+              fi
+              NEW_VERSION="v${FILE_VERSION}${NEXT_LETTER}"
+            fi
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "Creating incremental release: $NEW_VERSION"
+          else
+            # Different version, use version from file
+            NEW_VERSION="v${FILE_VERSION}"
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "Creating new version release: $NEW_VERSION"
+          fi
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          NEW_VERSION="${{ steps.determine_version.outputs.new_version }}"
+          if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+            echo "Tag $NEW_VERSION already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $NEW_VERSION does not exist"
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          NEW_VERSION="${{ steps.determine_version.outputs.new_version }}"
+
+          # Generate release notes
+          if [ -z "${{ steps.get_latest_release.outputs.latest_release }}" ]; then
+            RELEASE_NOTES="Initial release"
+          else
+            RELEASE_NOTES=$(git log ${{ steps.get_latest_release.outputs.latest_release }}..HEAD --pretty=format:"- %s" --no-merges || echo "- Updates and improvements")
+          fi
+
+          # Create the release
+          gh release create "$NEW_VERSION" \
+            --title "$NEW_VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --target main
+
+          echo "Release $NEW_VERSION created successfully"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Skip release creation
+        if: steps.check_tag.outputs.tag_exists == 'true'
+        run: |
+          echo "Skipping release creation - tag already exists"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
@@ -22,7 +22,7 @@ func TestFromContext(t *testing.T) {
 	// Test with transaction in context
 	nrApp, _ := newrelic.NewApplication(newrelic.ConfigEnabled(false))
 	mockTxn := nrApp.StartTransaction("test")
-	c.SetUserContext(newrelic.NewContext(context.Background(), mockTxn))
+	c.SetContext(newrelic.NewContext(context.Background(), mockTxn))
 	txn = FromContext(c)
 	assert.NotNil(t, txn)
 }

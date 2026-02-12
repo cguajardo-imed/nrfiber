@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestConfigNoticeErrorEnabled(t *testing.T) {
@@ -29,7 +29,7 @@ func TestConfigStatusCodeIgnored(t *testing.T) {
 }
 
 func TestConfigCustomTransactionNameFunc(t *testing.T) {
-	customFunc := func(c *fiber.Ctx) string { return "test" }
+	customFunc := func(c fiber.Ctx) string { return "test" }
 	cfg := ConfigCustomTransactionNameFunc(customFunc)
 	if cfg.key != configCustomTransactionNameFunc {
 		t.Errorf("expected key %s, got %s", configCustomTransactionNameFunc, cfg.key)
