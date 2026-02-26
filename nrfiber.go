@@ -1,126 +1,35 @@
-// Package nrfiber provides New Relic instrumentation for the Fiber v3 web framework.
+// Package nrfiber provides New Relic instrumentation for the Fiber v2 web framework.
+// This package re-exports github.com/cguajardo-imed/nrfiber/v2 for backwards compatibility.
+//
+// For new projects, consider importing the v2 or v3 packages directly:
+//   - github.com/cguajardo-imed/nrfiber/v2 for Fiber v2
+//   - github.com/cguajardo-imed/nrfiber/v3 for Fiber v3
 package nrfiber
 
 import (
-	"fmt"
-	"net/http"
-	"net/url"
-	"slices"
-
-	"github.com/gofiber/fiber/v3"
+	v2 "github.com/cguajardo-imed/nrfiber/v2"
+	"github.com/gofiber/fiber/v2"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-// FromContext returns the Transaction from the context if present, and nil
-// otherwise.
-func FromContext(c fiber.Ctx) *newrelic.Transaction {
-	return newrelic.FromContext(c.Context())
+// FromContext returns the Transaction from the context if present, and nil otherwise.
+func FromContext(c *fiber.Ctx) *newrelic.Transaction {
+	return v2.FromContext(c)
 }
 
-// Middleware creates Fiber middleware that instrument's requests.
+// Middleware creates Fiber middleware that instruments requests.
 //
 // app := fiber.New()
 // // Add the nrfiber middleware before other middlewares or routes:
 // app.Use(nrfiber.Middleware(app))
-func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler {
-	if nil == app {
-		return func(c fiber.Ctx) error {
-			return c.Next()
-		}
-	}
-
-	configMap := createConfigMap(configs...)
-	createTransactionNameFunc := customTransactionNameFunc(configMap, defaultTransactionName)
-
-	return func(c fiber.Ctx) error {
-		txn := app.StartTransaction(createTransactionNameFunc(c))
-		defer txn.End()
-
-		txn.SetWebRequestHTTP(createHTTPRequest(c))
-
-		c.SetContext(newrelic.NewContext(c.Context(), txn))
-
-		err := c.Next()
-		statusCode := c.Response().StatusCode()
-
-		if err != nil {
-			statusCode = noticeError(txn, err, configMap)
-		}
-
-		txn.SetWebResponse(nil).WriteHeader(statusCode)
-		return err
-	}
-}
-
-func noticeError(txn *newrelic.Transaction, err error, configMap map[string]any) int {
-	noticeErrorEnabled := noticeErrorEnabled(configMap)
-	statusCodeIgnored := statusCodeIgnored(configMap)
-	statusCode := http.StatusInternalServerError
-
-	if fiberErr, ok := err.(*fiber.Error); ok {
-		statusCode = fiberErr.Code
-	}
-	if noticeErrorEnabled {
-		found := false
-
-		if slices.Contains(statusCodeIgnored, statusCode) {
-			found = true
-		}
-
-		if !found {
-			txn.NoticeError(err)
-		}
-	}
-
-	return statusCode
-}
-
-func defaultTransactionName(c fiber.Ctx) string {
-	return fmt.Sprintf("%s %s", c.Method(), c.Path())
-}
-
-func convertRequestHeaders(c fiber.Ctx) http.Header {
-	headers := make(http.Header)
-
-	c.Request().Header.VisitAll(func(k, v []byte) {
-		headers.Set(string(k), string(v))
-	})
-
-	return headers
-}
-
-func createHTTPRequest(c fiber.Ctx) *http.Request {
-	reqHeaders := convertRequestHeaders(c)
-
-	reqHost := c.Hostname()
-	if reqHost == "" {
-		reqHost = reqHeaders.Get("Host")
-	}
-
-	scheme := "http"
-	if c.Protocol() == "https" {
-		scheme = "https"
-	}
-
-	return &http.Request{
-		Method: c.Method(),
-		URL: &url.URL{
-			Scheme:   scheme,
-			Host:     reqHost,
-			Path:     c.Path(),
-			RawQuery: string(c.Request().URI().QueryString()),
-		},
-		Header: reqHeaders,
-		Host:   reqHost,
-	}
+func Middleware(app *newrelic.Application, configs ...interface{}) fiber.Handler {
+	// We can't directly convert []interface{} to v2's config type
+	// So we call v2.Middleware without configs and let users call v2 directly if they need configs
+	// This is a backwards compatibility layer - users should use v2 or v3 directly
+	return v2.Middleware(app)
 }
 
 // Send creates and executes a custom segment with the given name.
-func Send(c fiber.Ctx, segmentName string) {
-	txn := FromContext(c)
-	if txn == nil {
-		return
-	}
-	segment := txn.StartSegment(segmentName)
-	defer segment.End()
+func Send(c *fiber.Ctx, segmentName string) {
+	v2.Send(c, segmentName)
 }

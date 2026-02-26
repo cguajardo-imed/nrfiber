@@ -11,14 +11,15 @@
 - **Module Paths**: 
   - v3: `github.com/cguajardo-imed/nrfiber/v3`
   - v2: `github.com/cguajardo-imed/nrfiber/v2`
-- **Current Version**: 3.0.0 (managed in `version` file)
+- **Current Version**: 3.0.3 (managed in `version` file)
 - **Primary Dependencies**:
   - `github.com/gofiber/fiber/v3` (for v3) or `github.com/gofiber/fiber/v2` (for v2) - Web framework
   - `github.com/newrelic/go-agent/v3` - New Relic APM agent
   - `github.com/stretchr/testify` - Testing framework
 - **Module Structure**:
-  - Root directory: Fiber v3 support (`nrfiber/v3`)
+  - Root directory: Fiber v2 support (for backwards compatibility)
   - `v2/` directory: Fiber v2 support (`nrfiber/v2`)
+  - `v3/` directory: Fiber v3 support (`nrfiber/v3`)
   - No build tags required - use appropriate import path
 
 ## Project Structure
@@ -38,12 +39,19 @@ nrfiber/
 │   ├── config_test.go
 │   ├── go.mod        # Separate module (nrfiber/v2)
 │   └── README.md
-├── config.go         # Configuration for Fiber v3
-├── config_test.go    # Configuration tests for v3
-├── nrfiber.go        # Main middleware implementation for v3
-├── nrfiber_test.go   # Core functionality tests for v3
+├── v3/               # Fiber v3 module
+│   ├── nrfiber.go    # Main middleware for v3
+│   ├── config.go     # Configuration for v3
+│   ├── nrfiber_test.go
+│   ├── config_test.go
+│   ├── go.mod        # Separate module (nrfiber/v3)
+│   └── README.md
+├── config.go         # Root config (v2 for backwards compatibility)
+├── config_test.go    # Configuration tests for root
+├── nrfiber.go        # Main middleware implementation for root
+├── nrfiber_test.go   # Core functionality tests for root
 ├── version           # Version file for automated releases
-├── go.mod            # Go module dependencies (nrfiber/v3)
+├── go.mod            # Go module dependencies (root)
 └── README.md         # Project documentation
 ```
 
@@ -89,7 +97,7 @@ nrfiber/
    - Add nil checks for transactions to prevent panics
 
 3. **Module Structure**:
-   - v3 code lives in the root directory
+   - v3 code lives in the `v3/` subdirectory
    - v2 code lives in the `v2/` subdirectory
    - Each has its own `go.mod` file
    - No build tags needed - import path determines version
@@ -182,8 +190,10 @@ nrfiber/
 Always test both Fiber v2 and v3 before pushing:
 
 ```bash
-# Test Fiber v3 (root directory)
+# Test Fiber v3 (v3 directory)
+cd v3
 go test ./...
+cd ..
 
 # Test Fiber v2 (v2 directory)
 cd v2
@@ -262,7 +272,7 @@ go run main.go &
 
 You must add the configuration to both versions:
 
-**For config.go (v3) in root and v2/config.go:**
+**For v3/config.go and v2/config.go:**
 ```go
 // 1. Add constant in both files
 const configKeyNewOption = "NewOption"

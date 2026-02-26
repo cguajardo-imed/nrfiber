@@ -1,70 +1,30 @@
+// Package nrfiber provides New Relic instrumentation for the Fiber v2 web framework.
+// This package re-exports github.com/cguajardo-imed/nrfiber/v2 for backwards compatibility.
+//
+// For new projects, use the v2 or v3 packages directly:
+//   - github.com/cguajardo-imed/nrfiber/v2 for Fiber v2
+//   - github.com/cguajardo-imed/nrfiber/v3 for Fiber v3
 package nrfiber
 
-import "github.com/gofiber/fiber/v3"
-
-const (
-	configKeyNoticeErrorEnabled     = "NoticeErrorEnabled"
-	configKeyStatusCodeIgnored      = "StatusCodeIgnored"
-	configCustomTransactionNameFunc = "CustomTransactionNameFunc"
+import (
+	v2 "github.com/cguajardo-imed/nrfiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
-type config struct {
-	key   string
-	value any
+// ConfigNoticeErrorEnabled enables or disables error reporting to New Relic.
+// This function re-exports from v2. For full functionality, import v2 directly.
+func ConfigNoticeErrorEnabled(enabled bool) interface{} {
+	return v2.ConfigNoticeErrorEnabled(enabled)
 }
 
-func ConfigNoticeErrorEnabled(enabled bool) *config {
-	return &config{
-		key:   configKeyNoticeErrorEnabled,
-		value: enabled,
-	}
+// ConfigStatusCodeIgnored specifies HTTP status codes that should not be reported as errors.
+// This function re-exports from v2. For full functionality, import v2 directly.
+func ConfigStatusCodeIgnored(statusCodes []int) interface{} {
+	return v2.ConfigStatusCodeIgnored(statusCodes)
 }
 
-func ConfigStatusCodeIgnored(statusCode []int) *config {
-	return &config{
-		key:   configKeyStatusCodeIgnored,
-		value: statusCode,
-	}
-}
-
-func ConfigCustomTransactionNameFunc(customTransactionNameFunc func(c fiber.Ctx) string) *config {
-	return &config{
-		key:   configCustomTransactionNameFunc,
-		value: customTransactionNameFunc,
-	}
-}
-
-func createConfigMap(configs ...*config) map[string]any {
-	configMap := make(map[string]any, len(configs))
-	for _, c := range configs {
-		configMap[c.key] = c.value
-	}
-	return configMap
-}
-
-func noticeErrorEnabled(configMap map[string]any) bool {
-	if val, ok := configMap[configKeyNoticeErrorEnabled]; ok {
-		if boolVal, ok := val.(bool); ok {
-			return boolVal
-		}
-	}
-	return false
-}
-
-func statusCodeIgnored(configMap map[string]any) []int {
-	if val, ok := configMap[configKeyStatusCodeIgnored]; ok {
-		if v, ok := val.([]int); ok {
-			return v
-		}
-	}
-	return []int{}
-}
-
-func customTransactionNameFunc(configMap map[string]any, defaultFunc func(c fiber.Ctx) string) func(c fiber.Ctx) string {
-	if val, ok := configMap[configCustomTransactionNameFunc]; ok {
-		if v, ok := val.(func(c fiber.Ctx) string); ok {
-			return v
-		}
-	}
-	return defaultFunc
+// ConfigCustomTransactionNameFunc provides a custom function to name transactions.
+// This function re-exports from v2. For full functionality, import v2 directly.
+func ConfigCustomTransactionNameFunc(fn func(*fiber.Ctx) string) interface{} {
+	return v2.ConfigCustomTransactionNameFunc(fn)
 }

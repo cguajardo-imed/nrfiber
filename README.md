@@ -4,6 +4,11 @@ Provides auto instrumentation for [NewRelic](https://newrelic.com) and [GoFiber]
 
 **Compatible with both Fiber v2 and v3!**
 
+> **Note:** The root package (`github.com/cguajardo-imed/nrfiber`) is a backwards compatibility wrapper that re-exports from `v2`. 
+> For new projects, use the versioned packages directly:
+> - `github.com/cguajardo-imed/nrfiber/v2` for Fiber v2
+> - `github.com/cguajardo-imed/nrfiber/v3` for Fiber v3
+
 ## Install
 
 ### For Fiber v3
@@ -16,7 +21,7 @@ go get -u github.com/cguajardo-imed/nrfiber/v3
 go get -u github.com/cguajardo-imed/nrfiber/v2
 ```
 
-**Note:** No build tags required - the version is determined by the import path you use.
+**Note:** Separate modules for each version - no build tags needed!
 
 ## Usage
 
@@ -49,14 +54,14 @@ func main() {
 	app.Use(nrfiber.Middleware(nr))
 
 	// Use created transaction to create custom segments
-	app.Get("/cart", func(ctx fiber.Ctx) error {
-		txn := nrfiber.FromContext(ctx)
+	app.Get("/cart", func(c fiber.Ctx) error {
+		txn := nrfiber.FromContext(c)
 		segment := txn.StartSegment("Price Calculation")
 		defer segment.End()
 
 		// calculate the price
 
-		return ctx.SendString("Cart processed")
+		return c.SendString("Cart processed")
 	})
 	
 	app.Listen(":3000")
@@ -65,13 +70,13 @@ func main() {
 
 ### Fiber v2
 
-The API is identical for Fiber v2, just use the `fiberv2` build tag:
+The API is identical for Fiber v2:
 
 ```go
 package main
 
 import (
-	"github.com/cguajardo-imed/nrfiber/v3"
+	"github.com/cguajardo-imed/nrfiber/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"log"
@@ -92,14 +97,14 @@ func main() {
 	app.Use(nrfiber.Middleware(nr))
 
 	// Use created transaction to create custom segments
-	app.Get("/cart", func(ctx *fiber.Ctx) error {
-		txn := nrfiber.FromContext(ctx)
+	app.Get("/cart", func(c *fiber.Ctx) error {
+		txn := nrfiber.FromContext(c)
 		segment := txn.StartSegment("Price Calculation")
 		defer segment.End()
 
 		// calculate the price
 
-		return ctx.SendString("Cart processed")
+		return c.SendString("Cart processed")
 	})
 	
 	app.Listen(":3000")
@@ -141,6 +146,30 @@ customNameFunc := func(c *fiber.Ctx) string {
 app.Use(nrfiber.Middleware(nr, 
 	nrfiber.ConfigCustomTransactionNameFunc(customNameFunc),
 ))
+```
+
+## Quick Segment Helper
+
+The `Send` function provides a convenient way to create and track segments:
+
+```go
+// For Fiber v3
+app.Get("/operation", func(c fiber.Ctx) error {
+	nrfiber.Send(c, "CustomOperation")
+	
+	// Your code here
+	
+	return c.SendString("Done")
+})
+
+// For Fiber v2
+app.Get("/operation", func(c *fiber.Ctx) error {
+	nrfiber.Send(c, "CustomOperation")
+	
+	// Your code here
+	
+	return c.SendString("Done")
+})
 ```
 
 ## Version Selection
@@ -195,9 +224,78 @@ cd examples/fiber-v2-basic
 go run main.go
 ```
 
+## API Reference
+
+### Middleware
+
+```go
+func Middleware(app *newrelic.Application, configs ...*config) fiber.Handler
+```
+
+Creates a Fiber middleware that instruments HTTP requests with New Relic.
+
+**Parameters:**
+- `app`: New Relic application instance
+- `configs`: Optional configuration options
+
+**Returns:** Fiber handler function
+
+### FromContext
+
+```go
+// For Fiber v3
+func FromContext(c fiber.Ctx) *newrelic.Transaction
+
+// For Fiber v2
+func FromContext(c *fiber.Ctx) *newrelic.Transaction
+```
+
+Retrieves the New Relic transaction from the Fiber context.
+
+**Returns:** Transaction or `nil` if not found
+
+### Send
+
+```go
+// For Fiber v3
+func Send(c fiber.Ctx, segmentName string)
+
+// For Fiber v2
+func Send(c *fiber.Ctx, segmentName string)
+```
+
+Convenience function to create and track a named segment.
+
+## Version Compatibility
+
+| nrfiber Version | Fiber v2 | Fiber v3 | Go Version |
+|-----------------|----------|----------|------------|
+| v3.0.0+ | ✅ (via `/v2`) | ✅ (via `/v3`) | 1.25.0+ |
+| v2.0.0+ | ✅ | ❌ | 1.25.0+ |
+
+## Project Structure
+
+```
+nrfiber/
+├── v2/               # Fiber v2 support (nrfiber/v2)
+│   ├── nrfiber.go
+│   ├── config.go
+│   ├── go.mod
+│   └── README.md
+├── v3/               # Fiber v3 support (nrfiber/v3)
+│   ├── nrfiber.go
+│   ├── config.go
+│   ├── go.mod
+│   └── README.md
+├── examples/         # Example applications
+└── docs/             # Additional documentation
+```
+
 ## Guides
 
 - [Notice Custom Errors](docs/notice-custom-errors.md)
+- [Migration Guide](docs/MIGRATION_GUIDE.md) - Migrating from older versions
+- [IDE Setup](docs/IDE_SETUP.md) - Configuring your IDE
 
 ## CI/CD
 
@@ -213,6 +311,30 @@ This project uses GitHub Actions for automated releases:
 
 To create a new major/minor/patch release, simply update the `version` file and push to `main`.
 
+## FAQ
+
+### Q: Which version should I use?
+
+**A:** Use the import path that matches your Fiber version:
+- Fiber v2: `github.com/cguajardo-imed/nrfiber/v2`
+- Fiber v3: `github.com/cguajardo-imed/nrfiber/v3`
+
+### Q: Can I use both v2 and v3 in the same project?
+
+**A:** No, you must choose one Fiber version per project.
+
+### Q: What's the difference between v2 and v3?
+
+**A:** The main difference is the context type:
+- v2 uses `*fiber.Ctx` (pointer)
+- v3 uses `fiber.Ctx` (interface)
+
+The API is otherwise identical.
+
 ## Contributing
 
-Feel free to add anything useful or fix something.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project follows the license specified in the LICENSE file.
