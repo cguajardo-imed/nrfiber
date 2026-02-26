@@ -1,4 +1,4 @@
-// Package nrfiber provides New Relic instrumentation for the Fiber web framework.
+// Package nrfiber provides New Relic instrumentation for the Fiber v3 web framework.
 package nrfiber
 
 import (
@@ -115,8 +115,12 @@ func createHTTPRequest(c fiber.Ctx) *http.Request {
 	}
 }
 
+// Send creates and executes a custom segment with the given name.
 func Send(c fiber.Ctx, segmentName string) {
 	txn := FromContext(c)
+	if txn == nil {
+		return
+	}
 	segment := txn.StartSegment(segmentName)
 	defer segment.End()
 }
