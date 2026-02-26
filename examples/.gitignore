@@ -1,0 +1,53 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+dist/
+build/
+bin/
+
+# Compiled binaries
+fiber-v2-app
+fiber-v3-app
+fiber-*-basic
+fiber-*-advanced
+
+# Log files
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# go.sum files (they'll be generated)
+# Uncomment if you want to ignore them
+# go.sum
