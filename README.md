@@ -293,9 +293,10 @@ nrfiber/
 
 ## Guides
 
-- [Notice Custom Errors](docs/notice-custom-errors.md)
+- [Notice Custom Errors](docs/notice-custom-errors.md) - Handling custom errors and avoiding duplicates
 - [Migration Guide](docs/MIGRATION_GUIDE.md) - Migrating from older versions
-- [IDE Setup](docs/IDE_SETUP.md) - Configuring your IDE
+- [IDE Setup](docs/IDE_SETUP.md) - Configuring your IDE for nrfiber development
+- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## CI/CD
 

@@ -13,18 +13,18 @@ import (
 
 // ConfigNoticeErrorEnabled enables or disables error reporting to New Relic.
 // This function re-exports from v2. For full functionality, import v2 directly.
-func ConfigNoticeErrorEnabled(enabled bool) interface{} {
+func ConfigNoticeErrorEnabled(enabled bool) any {
 	return v2.ConfigNoticeErrorEnabled(enabled)
 }
 
 // ConfigStatusCodeIgnored specifies HTTP status codes that should not be reported as errors.
 // This function re-exports from v2. For full functionality, import v2 directly.
-func ConfigStatusCodeIgnored(statusCodes []int) interface{} {
+func ConfigStatusCodeIgnored(statusCodes []int) any {
 	return v2.ConfigStatusCodeIgnored(statusCodes)
 }
 
 // ConfigCustomTransactionNameFunc provides a custom function to name transactions.
 // This function re-exports from v2. For full functionality, import v2 directly.
-func ConfigCustomTransactionNameFunc(fn func(*fiber.Ctx) string) interface{} {
+func ConfigCustomTransactionNameFunc(fn func(*fiber.Ctx) string) any {
 	return v2.ConfigCustomTransactionNameFunc(fn)
 }

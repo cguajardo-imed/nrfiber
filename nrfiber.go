@@ -22,7 +22,7 @@ func FromContext(c *fiber.Ctx) *newrelic.Transaction {
 // app := fiber.New()
 // // Add the nrfiber middleware before other middlewares or routes:
 // app.Use(nrfiber.Middleware(app))
-func Middleware(app *newrelic.Application, configs ...interface{}) fiber.Handler {
+func Middleware(app *newrelic.Application, configs ...any) fiber.Handler {
 	// We can't directly convert []interface{} to v2's config type
 	// So we call v2.Middleware without configs and let users call v2 directly if they need configs
 	// This is a backwards compatibility layer - users should use v2 or v3 directly
